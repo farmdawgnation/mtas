@@ -86,71 +86,198 @@ functions.http('handleSms', async (req: Request, res: Response) => {
 });
 
 /**
- * Admin function to manage users and roles
- * Format: ADD <name> <phone> <role1,role2>
- * Format: REMOVE <phone>
- * Format: UPDATE <phone> <role1,role2>
+ * List all users
  */
-functions.http('adminCommand', async (req: Request, res: Response) => {
+functions.http('listUsers', async (req: Request, res: Response) => {
   try {
-    const from = req.body.From;
-    const body = req.body.Body;
-    
-    if (!from || !body) {
-      res.status(400).send('Missing required parameters');
+    // Check if request method is GET
+    if (req.method !== 'GET') {
+      res.status(405).json({ error: 'Method not allowed' });
       return;
     }
 
-    // Check if the sender is an admin
-    const user = await getUserByPhoneNumber(from);
-    if (!user || !user.roles.includes(Role.ADMIN)) {
-      await sendSms(from, 'You do not have permission to use admin commands.');
-      res.setHeader('Content-Type', 'text/xml');
-      res.send('<Response></Response>');
-      return;
-    }
-
-    const parts = body.trim().split(' ');
-    const command = parts[0].toUpperCase();
-
-    let result = '';
+    // Get all users from the database
+    const users = await listUsers();
     
-    if (command === 'ADD' && parts.length >= 4) {
-      const name = parts[1];
-      const phoneNumber = parts[2];
-      const roles = parts[3].split(',').map((role: string) => role.toUpperCase()) as Role[];
-      
-      await addUser(name, phoneNumber, roles);
-      result = `Added user ${name} with phone ${phoneNumber} and roles ${roles.join(', ')}`;
-    } 
-    else if (command === 'REMOVE' && parts.length >= 2) {
-      const phoneNumber = parts[1];
-      await removeUser(phoneNumber);
-      result = `Removed user with phone ${phoneNumber}`;
-    }
-    else if (command === 'UPDATE' && parts.length >= 3) {
-      const phoneNumber = parts[1];
-      const roles = parts[2].split(',').map((role: string) => role.toUpperCase()) as Role[];
-      
-      await updateUserRoles(phoneNumber, roles);
-      result = `Updated user ${phoneNumber} with roles ${roles.join(', ')}`;
-    }
-    else if (command === 'LIST') {
-      const users = await listUsers();
-      result = `Users in system:\n${users.map(u => `${u.name} (${u.phoneNumber}): ${u.roles.join(', ')}`).join('\n')}`;
-    }
-    else {
-      result = 'Invalid command format. Use ADD, REMOVE, UPDATE, or LIST.';
-    }
-
-    // Send result back to admin
-    await sendSms(from, result);
-    
-    res.setHeader('Content-Type', 'text/xml');
-    res.send('<Response></Response>');
+    // Return the users
+    res.status(200).json({ users });
   } catch (error) {
-    console.error('Error handling admin command:', error);
-    res.status(500).send('Internal Server Error');
+    console.error('Error listing users:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Get a user by phone number
+ */
+functions.http('getUser', async (req: Request, res: Response) => {
+  try {
+    // Check if request method is GET
+    if (req.method !== 'GET') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    // Get phone number from URL path
+    const phoneNumber = req.path.split('/').pop();
+    
+    if (!phoneNumber) {
+      res.status(400).json({ error: 'Phone number is required' });
+      return;
+    }
+
+    // Get user by phone number
+    const user = await getUserByPhoneNumber(phoneNumber);
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    
+    // Return the user
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Add a new user
+ * Body: { name: string, phoneNumber: string, roles: Role[] }
+ */
+functions.http('addUser', async (req: Request, res: Response) => {
+  try {
+    // Check if request method is POST
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    // Get user details from request body
+    const { name, phoneNumber, roles } = req.body;
+    
+    // Validate request body
+    if (!name || !phoneNumber || !roles || !Array.isArray(roles)) {
+      res.status(400).json({ error: 'Name, phone number, and roles are required' });
+      return;
+    }
+
+    // Validate roles
+    for (const role of roles) {
+      if (!Object.values(Role).includes(role)) {
+        res.status(400).json({ error: `Invalid role: ${role}` });
+        return;
+      }
+    }
+
+    // Check if user already exists
+    const existingUser = await getUserByPhoneNumber(phoneNumber);
+    if (existingUser) {
+      res.status(409).json({ error: 'User with this phone number already exists' });
+      return;
+    }
+
+    // Add the user
+    await addUser(name, phoneNumber, roles);
+    
+    // Return success message
+    res.status(201).json({ message: 'User added successfully' });
+  } catch (error) {
+    console.error('Error adding user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Update a user's roles
+ * Body: { roles: Role[] }
+ */
+functions.http('updateUser', async (req: Request, res: Response) => {
+  try {
+    // Check if request method is PUT
+    if (req.method !== 'PUT') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    // Get phone number from URL path
+    const phoneNumber = req.path.split('/').pop();
+    
+    if (!phoneNumber) {
+      res.status(400).json({ error: 'Phone number is required' });
+      return;
+    }
+
+    // Get roles from request body
+    const { roles } = req.body;
+    
+    // Validate roles
+    if (!roles || !Array.isArray(roles)) {
+      res.status(400).json({ error: 'Roles are required and must be an array' });
+      return;
+    }
+
+    for (const role of roles) {
+      if (!Object.values(Role).includes(role)) {
+        res.status(400).json({ error: `Invalid role: ${role}` });
+        return;
+      }
+    }
+
+    // Update the user's roles
+    try {
+      await updateUserRoles(phoneNumber, roles);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('No user found')) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      throw error;
+    }
+    
+    // Return success message
+    res.status(200).json({ message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Delete a user
+ */
+functions.http('deleteUser', async (req: Request, res: Response) => {
+  try {
+    // Check if request method is DELETE
+    if (req.method !== 'DELETE') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    // Get phone number from URL path
+    const phoneNumber = req.path.split('/').pop();
+    
+    if (!phoneNumber) {
+      res.status(400).json({ error: 'Phone number is required' });
+      return;
+    }
+
+    // Check if user exists
+    const existingUser = await getUserByPhoneNumber(phoneNumber);
+    if (!existingUser) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Remove the user
+    await removeUser(phoneNumber);
+    
+    // Return success message
+    res.status(200).json({ message: 'User removed successfully' });
+  } catch (error) {
+    console.error('Error removing user:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

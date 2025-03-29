@@ -26,6 +26,57 @@ action should be taken. Specifically:
 * If the number inbound is a `STAFF` or `ADMIN` role the message will be broadcast to all users, except the
   inbound number. Confirmation the messages have been sent will then be transmitted back to the inbound number.
 
+## Admin API
+
+The system provides an API for managing users in the system. The following functions are available:
+
+### List Users
+- **Function**: `listUsers`
+- **Method**: GET
+- **Description**: Returns a list of all users in the system
+- **Response**: JSON object containing an array of users
+
+### Get User
+- **Function**: `getUser`
+- **Method**: GET
+- **Description**: Returns information about a specific user by phone number
+- **Parameters**: Phone number (extracted from the path)
+- **Response**: JSON object containing user details or an error message
+
+### Add User
+- **Function**: `addUser`
+- **Method**: POST
+- **Description**: Adds a new user to the system
+- **Request Body**: 
+  ```json
+  {
+    "name": "User Name",
+    "phoneNumber": "+1234567890",
+    "roles": ["SUBSCRIBER", "STAFF", "ADMIN"]
+  }
+  ```
+- **Response**: JSON object with success message or error details
+
+### Update User
+- **Function**: `updateUser`
+- **Method**: PUT
+- **Description**: Updates a user's roles
+- **Parameters**: Phone number (extracted from the path)
+- **Request Body**:
+  ```json
+  {
+    "roles": ["SUBSCRIBER", "STAFF"]
+  }
+  ```
+- **Response**: JSON object with success message or error details
+
+### Delete User
+- **Function**: `deleteUser`
+- **Method**: DELETE
+- **Description**: Removes a user from the system
+- **Parameters**: Phone number (extracted from the path)
+- **Response**: JSON object with success message or error details
+
 ## Prerequisites
 
 - Node.js 22.x
@@ -67,8 +118,8 @@ You can also run the functions directly using the Functions Framework after buil
 # Build the TypeScript code
 npm run build
 
-# Run the hello function locally
-npx @google-cloud/functions-framework --target=hello --source=build
+# Run a specific function locally (replace 'handleSms' with any function name)
+npx @google-cloud/functions-framework --target=handleSms --source=build
 ```
 
 ## Deploying to Google Cloud
@@ -83,17 +134,17 @@ npm run build
 Then deploy using gcloud:
 
 ```bash
-gcloud functions deploy hello \
+gcloud functions deploy handleSms \
   --gen2 \
   --runtime=nodejs22 \
   --region=us-central1 \
   --source=. \
-  --entry-point=hello \
+  --entry-point=handleSms \
   --trigger-http \
   --allow-unauthenticated
 ```
 
-Note: The deployment process will detect and use the TypeScript configuration to build your code. The entry point should reference the function name exported from your built JavaScript files.
+Note: You need to deploy each function separately. Replace `handleSms` with the name of the function you want to deploy, such as `listUsers`, `getUser`, etc.
 
 ## License
 
