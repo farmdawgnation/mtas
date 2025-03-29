@@ -1,0 +1,34 @@
+{
+  "name": "mtas",
+  "version": "0.1.0",
+  "description": "My Twilio Application Service - Cloud Run Functions project",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "npm run build && functions-framework --target=hello --source=build",
+    "dev": "concurrently \"npm run watch\" \"functions-framework --target=hello --source=build\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "keywords": [
+    "twilio",
+    "firestore",
+    "google-cloud",
+    "cloud-functions"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.1.0",
+    "@google-cloud/functions-framework": "^3.3.0",
+    "twilio": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}
