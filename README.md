@@ -26,20 +26,6 @@ action should be taken. Specifically:
 * If the number inbound is a `STAFF` or `ADMIN` role the message will be broadcast to all users, except the
   inbound number. Confirmation the messages have been sent will then be transmitted back to the inbound number.
 
-## Project Structure
-
-```
-mtas/
-├── src/                   # Source code
-│   └── index.ts           # Main entry point with Cloud Functions (TypeScript)
-├── build/                 # Compiled JavaScript output (generated)
-│   └── index.js           # Compiled JavaScript code
-├── package.json           # Node.js dependencies and scripts
-├── package-lock.json      # Lock file for dependencies
-├── tsconfig.json          # TypeScript configuration
-└── README.md              # This file
-```
-
 ## Prerequisites
 
 - Node.js 22.x
