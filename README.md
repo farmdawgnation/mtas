@@ -1,6 +1,30 @@
-# MTAS (My Twilio Application Service)
+# MTAS (Multi Tenant Alert Service)
 
-A TypeScript service designed to run on Google Cloud Run Functions that integrates with Twilio and Firestore.
+I volunteer on with various organizations that are nonprofits and frequently have stakeholders of one kind
+or another that need to be notified quickly in the event something is happening that requires a quick reaction
+from folks at a location. One example of this is a nonprofit that has tenants which needs an efficient way for
+trusted volunteers or staff members to boradcast alerts about utilities in the building as needed.
+
+There are a few moving parts that are involved here:
+
+* GCP Cloud Run Functions is where the logic actually runs. Twilio will send HTTP requests into an endpoint
+  running in Functions when SMS control messages are received. It will then, depending on the request, issue
+  Twilio API requests to broadcast messsages or make changes to the data in Cloud Firestore.
+* GCP Cloud Firestore is used to store the current database of numbers in a single "numbers" collection. Each
+  document within the collection consists of a name associated with the contact, a phone number, and one or more
+  roles
+  * The `SUBSCRIBER` role means that a number will receive notifications sent to the system.
+  * The `STAFF` role means that a number can broadcast messages to subscribers.
+  * The `ADMIN` role means that a number can add and remove users and roles.
+* Twilio provides the SMS infrastructure.
+
+When an inbound message is received from Twilio, is is checked against a few different rules to determine what
+action should be taken. Specifically:
+
+* If the number inbound is not recognized or only is a `SUBSCRIBER`, the message will be forwarded to numbers
+  with the `ADMIN` role.
+* If the number inbound is a `STAFF` or `ADMIN` role the message will be broadcast to all users, except the
+  inbound number. Confirmation the messages have been sent will then be transmitted back to the inbound number.
 
 ## Project Structure
 
