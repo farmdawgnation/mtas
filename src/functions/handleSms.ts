@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 import { Role } from '../models';
 import { 
   getUserByPhoneNumber, 
-  forwardMessageToAdmins, 
+  forwardMessageToSupervisor,
   broadcastMessage, 
   sendSms 
 } from '../services';
@@ -36,15 +36,15 @@ export const handleSmsFunction = async (req: Request, res: Response) => {
     // Process based on user roles
     if (!user || (user.roles.includes(Role.SUBSCRIBER) && 
         !user.roles.includes(Role.STAFF) && 
-        !user.roles.includes(Role.ADMIN))) {
+        !user.roles.includes(Role.SUPERVISOR))) {
       // Forward to admins if sender is not recognized or only a SUBSCRIBER
-      await forwardMessageToAdmins(from, body);
+      await forwardMessageToSupervisor(from, body);
       
       // If the user is recognized, send a confirmation
       if (user) {
         await sendSms(from, 'Your message has been forwarded to the administrators.');
       }
-    } else if (user.roles.includes(Role.STAFF) || user.roles.includes(Role.ADMIN)) {
+    } else if (user.roles.includes(Role.STAFF) || user.roles.includes(Role.SUPERVISOR)) {
       // Broadcast message to all subscribers except the sender
       await broadcastMessage(from, body);
       

@@ -28,9 +28,9 @@ export async function sendSms(to: string, body: string): Promise<void> {
 /**
  * Forward a message to all admins
  */
-export async function forwardMessageToAdmins(fromNumber: string, message: string): Promise<void> {
+export async function forwardMessageToSupervisor(fromNumber: string, message: string): Promise<void> {
   const { listUsersByRole } = await import('./firestore');
-  const admins = await listUsersByRole(Role.ADMIN);
+  const admins = await listUsersByRole(Role.SUPERVISOR);
 
   const adminPromises = admins.map(admin => {
     return sendSms(
