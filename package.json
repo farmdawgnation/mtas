@@ -7,8 +7,8 @@
     "build": "tsc",
     "clean": "rm -rf build/*",
     "watch": "tsc --watch",
-    "start": "npm run build && functions-framework --target=hello --source=build",
-    "dev": "concurrently \"npm run watch\" \"functions-framework --target=hello --source=build\"",
+    "start": "npm run build && functions-framework --target=handleSms --source=build",
+    "dev": "concurrently \"npm run watch\" \"functions-framework --target=handleSms --source=build\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
